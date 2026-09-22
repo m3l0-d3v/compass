@@ -1,0 +1,21 @@
+services:
+  compass-postgres:
+    image: pgvector/pgvector:pg15
+    container_name: compass-postgres
+    environment:
+      POSTGRES_USER: compass_user
+      POSTGRES_PASSWORD: compass_password
+      POSTGRES_DB: db_development
+    ports:
+      - "5435:5432"
+    volumes:
+      - compass-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compass_user -d db_development"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  compass-pgdata:
+    driver: local
