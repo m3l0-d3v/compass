@@ -10,6 +10,4 @@ export abstract class ICompositionRepository {
   ): Promise<CompositionEntity | null>;
   abstract create(args: Prisma.CompositionCreateArgs): Promise<void>;
   abstract update(args: Prisma.CompositionUpdateArgs): Promise<void>;
-  abstract softDelete(args: Prisma.CompositionDeleteArgs): Promise<void>;
-  abstract hardDelete(args: Prisma.CompositionDeleteArgs): Promise<void>;
 }

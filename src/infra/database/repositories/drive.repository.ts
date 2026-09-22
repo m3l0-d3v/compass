@@ -23,6 +23,7 @@ export class DriveRepository implements IDriveRepository {
           name: drive.object.name,
           description: drive.object.name,
           storageKey: StorageKey.from(drive.object.storageKey),
+          objectId: drive.object.id,
           createdAt: drive.object.createdAt,
           updatedAt: drive.object.updatedAt,
         },
@@ -51,6 +52,7 @@ export class DriveRepository implements IDriveRepository {
         name: drive.object.name,
         description: drive.object.name,
         storageKey: StorageKey.from(drive.object.storageKey),
+        objectId: drive.object.id,
         createdAt: drive.object.createdAt,
         updatedAt: drive.object.updatedAt,
       },
@@ -82,7 +84,15 @@ export class DriveRepository implements IDriveRepository {
 
     await this.prisma.drive.update({
       where: argsWrapped.where,
-      data: { deletedAt: new Date() },
+      data: {
+        object: {
+          update: {
+            data: {
+              deletedAt: new Date(),
+            },
+          },
+        },
+      },
     });
   }
 

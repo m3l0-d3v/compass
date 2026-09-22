@@ -97,7 +97,15 @@ export class FolderRepository implements IFolderRepository {
 
     await this.prisma.folder.update({
       where: argsWrapped.where,
-      data: { deletedAt: new Date() },
+      data: {
+        object: {
+          update: {
+            data: {
+              deletedAt: new Date(),
+            },
+          },
+        },
+      },
     });
   }
 

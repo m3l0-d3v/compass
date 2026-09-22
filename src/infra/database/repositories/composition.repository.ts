@@ -60,27 +60,4 @@ export class CompositionRepository implements ICompositionRepository {
 
     await this.prisma.composition.update(wrappedArgs);
   }
-
-  async softDelete(args: Prisma.CompositionDeleteArgs): Promise<void> {
-    const argsWrapped = {
-      ...args,
-      where: { ...args.where, deletedAt: null },
-    } as const;
-
-    await this.prisma.composition.update({
-      where: argsWrapped.where,
-      data: { deletedAt: new Date() },
-    });
-  }
-
-  async hardDelete(args: Prisma.CompositionDeleteArgs): Promise<void> {
-    const argsWrapped = {
-      ...args,
-      where: { ...args.where },
-    } as const;
-
-    await this.prisma.composition.delete({
-      where: argsWrapped.where,
-    });
-  }
 }

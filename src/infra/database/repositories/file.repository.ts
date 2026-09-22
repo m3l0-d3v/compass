@@ -97,7 +97,15 @@ export class FileRepository implements IFileRepository {
 
     await this.prisma.file.update({
       where: argsWrapped.where,
-      data: { deletedAt: new Date() },
+      data: {
+        object: {
+          update: {
+            data: {
+              deletedAt: new Date(),
+            },
+          },
+        },
+      },
     });
   }
 
