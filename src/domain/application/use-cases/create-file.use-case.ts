@@ -2,6 +2,7 @@ import { StorageKey } from "@/domain/enterprise/value-objects/storage-key.value-
 import { Either } from "@/lib/either";
 import { ObjectType } from "@prisma/generated";
 import { ICompositionRepository } from "../repositories/composition.repository";
+import { IFileStorageRepository } from "../repositories/file-storage.repository";
 import { IFileRepository } from "../repositories/file.repository";
 import { IObjectRepository } from "../repositories/object.repository";
 
@@ -11,16 +12,18 @@ type CreateFileUseCaseRequest = {
   mimeType: string;
   extension: string;
   size: number;
+  body: Uint8Array;
   parentId?: string;
 };
 
-type CreateFileUseCaseResponse = Either<Error, void>;
+type CreateFileUseCaseResponse = Either<Error, { storageKey: string }>;
 
 export class CreateFileUseCase {
   constructor(
     private readonly objectRepository: IObjectRepository,
     private readonly fileRepository: IFileRepository,
     private readonly compositionRepository: ICompositionRepository,
+    private readonly fileStorageRepository: IFileStorageRepository,
   ) {}
 
   async execute({
@@ -30,6 +33,7 @@ export class CreateFileUseCase {
     name,
     parentId,
     size,
+    body,
   }: CreateFileUseCaseRequest): Promise<CreateFileUseCaseResponse> {
     try {
       if (parentId) {
@@ -42,6 +46,15 @@ export class CreateFileUseCase {
         }
       }
 
+      const storageKey = StorageKey.create().toString();
+
+      await this.fileStorageRepository.put(
+        storageKey,
+        body,
+        mimeType,
+        `attachment; filename="${name.replace(/["\\\r\n]/g, "_")}"`,
+      );
+
       const file = await this.fileRepository.create({
         data: {
           mimeType,
@@ -51,7 +64,7 @@ export class CreateFileUseCase {
             create: {
               name,
               description,
-              storageKey: StorageKey.create().toString(),
+              storageKey,
               type: ObjectType.File,
             },
           },
@@ -67,7 +80,7 @@ export class CreateFileUseCase {
         });
       }
 
-      return Either.right(void 0);
+      return Either.right({ storageKey });
     } catch (error) {
       console.error(error);
       return Either.left(new Error("Unable to create file"));

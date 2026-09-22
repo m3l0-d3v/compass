@@ -17,8 +17,68 @@ import {
   TrashIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import type { MouseEvent } from "react";
 
-export const ObjectOptions = () => {
+type ObjectOptionsProps = {
+  storageKey: string;
+  fileName: string;
+  onDownloadStart: () => void;
+  onDownloadProgress: (progress: number) => void;
+  onDownloadEnd: () => void;
+};
+
+export const ObjectOptions = ({
+  storageKey,
+  fileName,
+  onDownloadStart,
+  onDownloadProgress,
+  onDownloadEnd,
+}: ObjectOptionsProps) => {
+  const [downloading, setDownloading] = useState(false);
+
+  const download = async (event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDownloading(true);
+    onDownloadStart();
+
+    try {
+      const response = await fetch(`/api/files/${storageKey}`);
+      if (!response.ok || !response.body) {
+        throw new Error("Unable to download file");
+      }
+
+      const total = Number(response.headers.get("Content-Length"));
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+
+      while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        chunks.push(result.value);
+        received += result.value.length;
+        if (total > 0) onDownloadProgress(Math.round((received / total) * 100));
+      }
+
+      const blob = new Blob(chunks as BlobPart[], {
+        type:
+          response.headers.get("Content-Type") ?? "application/octet-stream",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      onDownloadProgress(100);
+    } finally {
+      setDownloading(false);
+      onDownloadEnd();
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -29,7 +89,7 @@ export const ObjectOptions = () => {
       <DropdownMenuContent>
         <DropdownMenuGroup>
           <DropdownMenuLabel>Opções</DropdownMenuLabel>
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={download} disabled={downloading}>
             <DownloadCloudIcon className="size-4" />
             Baixar
           </DropdownMenuItem>

@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { ObjectRepository } from "@/infra/database/repositories/object.repository";
 import { FileRepository } from "@/infra/database/repositories/file.repository";
 import { CompositionRepository } from "@/infra/database/repositories/composition.repository";
+import { S3FileStorageRepository } from "@/infra/aws/repositories/s3-file-storage.repository";
 import { CreateFileUseCase } from "../use-cases/create-file.use-case";
 
 type CreateFileActionRequest = {
@@ -13,6 +14,7 @@ type CreateFileActionRequest = {
   mimeType: string;
   extension: string;
   size: number;
+  body: Uint8Array;
   parentId?: string;
 };
 
@@ -21,23 +23,34 @@ type CreateFileActionResponse = void;
 export const createFileAction: Action<
   CreateFileActionRequest,
   CreateFileActionResponse
-> = async ({ description, extension, mimeType, name, parentId, size }) => {
+> = async ({
+  body,
+  description,
+  extension,
+  mimeType,
+  name,
+  parentId,
+  size,
+}) => {
   try {
     return await prisma.$transaction(async (tx) => {
       const objectRepository = new ObjectRepository(tx);
       const fileRepository = new FileRepository(tx);
       const compositionRepository = new CompositionRepository(tx);
+      const fileStorageRepository = new S3FileStorageRepository();
 
       const createFileUseCaseResponse = await new CreateFileUseCase(
         objectRepository,
         fileRepository,
         compositionRepository,
+        fileStorageRepository,
       ).execute({
         name,
         description,
         mimeType,
         extension,
         size,
+        body,
         parentId,
       });
 

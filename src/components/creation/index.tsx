@@ -50,16 +50,7 @@ export const Creator: FC<CreatorProps> = ({ creations = [], parentId }) => {
     const extension = file.name.includes(".")
       ? (file.name.split(".").pop()?.toLowerCase() ?? "")
       : "";
-    const fileInfo = {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      extension,
-      parentId,
-      lastModified: file.lastModified,
-    };
-
-    console.log("Arquivo selecionado:", fileInfo);
+    const body = new Uint8Array(await file.arrayBuffer());
 
     const createFileActionResponse = await createFileAction({
       name: file.name,
@@ -67,18 +58,17 @@ export const Creator: FC<CreatorProps> = ({ creations = [], parentId }) => {
       mimeType: file.type,
       extension,
       size: file.size,
+      body,
       parentId,
     });
 
     if (createFileActionResponse.isLeft) {
-      console.error("Falha ao criar arquivo:", createFileActionResponse.error);
       toast.add({
         title: "Falha ao salvar o arquivo!",
         description:
           "Não foi possível salvar as informações do arquivo, tente novamente mais tarde.",
       });
     } else {
-      console.log("Arquivo criado:", fileInfo);
       toast.add({
         title: "Arquivo salvo com sucesso!",
         description: "As informações do arquivo foram salvas.",
